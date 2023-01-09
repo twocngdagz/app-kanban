@@ -1,7 +1,10 @@
 <?php
 
+use App\Card;
+use App\Column;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Spatie\DbDumper\Databases\MySql;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,18 +22,24 @@ Route::middleware('access')->group( function () {
     });
 
     Route::put('/columns', function (Request $request) {
-        foreach ($request->all() as $column) {
-            foreach ($column['cards'] as $index => $card) {
-                $cardModel = Card::findOrFail($card['id']);
-                if ($card['column_id'] != $column['id']) {
-                    $cardModel->column_id = $column['id'];
+        try {
+            foreach ($request->all() as $column) {
+                if (isset($column['cards'])) {
+                    foreach ($column['cards'] as $index => $card) {
+                        $cardModel = Card::findOrFail($card['id']);
+                        if ($card['column_id'] != $column['id']) {
+                            $cardModel->column_id = $column['id'];
+                        }
+                        $cardModel->order = $index;
+                        $cardModel->save();
+                    }
                 }
-                $cardModel->order = $index;
-                $cardModel->save();
-            }
-        }
 
-        return Column::with('cards')->get();
+            }
+
+            return Column::with('cards')->get();
+        } catch (Exception $e) {
+        }
     });
 
     Route::post('/columns', function (Request $request) {
