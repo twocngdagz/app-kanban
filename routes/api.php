@@ -93,7 +93,7 @@ Route::middleware('access')->group( function () {
                     return response()->json($query->get());
                 } else {
                     $query->withTrashed()->whereNotNull('deleted_at');
-                }x
+                }
             });
 
             return response()->json($query->get());
