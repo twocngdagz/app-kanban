@@ -2,6 +2,7 @@
 
 use App\Card;
 use App\Column;
+use App\Http\Requests\GetCardsRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Spatie\DbDumper\Databases\MySql;
@@ -66,6 +67,7 @@ Route::middleware('access')->group( function () {
     });
 
     Route::delete('/column/{column}', function (Column $column) {
+        $column->cards()->delete();
         return $column->delete();
     });
 
@@ -77,5 +79,23 @@ Route::middleware('access')->group( function () {
             ->dumpToFile(storage_path('app/dump.sql'));
 
         return response()->download(storage_path('app/dump.sql'));
+    });
+
+    Route::get('list-cards', function (GetCardsRequest $request) {
+        $query = Card::query();
+
+        $request
+            ->whenFilled('date', function ($date) use ($query) {
+                $query->where('created_at', '<', $date);
+            })
+            ->whenFilled('status', function ($status) use ($query) {
+                if ( (bool) $status) {
+                    return response()->json($query->get());
+                } else {
+                    $query->withTrashed()->whereNotNull('deleted_at');
+                }x
+            });
+
+            return response()->json($query->get());
     });
 });
